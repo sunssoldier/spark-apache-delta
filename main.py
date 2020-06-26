@@ -105,16 +105,17 @@ def create_delta(delta_path = delta_path, df=df0):
 	try:
 		shutil.rmtree(delta_path)
 	except:
-		print('Delta path does not exist yet.')
-
+		print('Delta path does not exist yet, not deleting.')
+    
 	df0.write.format("delta")\
 		.mode("overwrite")\
 		.save(delta_path)
-
+    
 	deltaTable = DeltaTable.forPath(spark, "data/delta-table")
-	deltaTable.toDF().show()
-
+	deltaTable.toDF().sort('key').show()
+    
 	return deltaTable
+
 
 deltaTable = create_delta()
 
@@ -138,11 +139,11 @@ def pit_merge(df, deltaTable=deltaTable):
 			"endDate": "null"}
 	).execute()
     
-	deltaTable.toDF().show()
+	deltaTable.toDF().sort('key').show()
 
 
 def pit_merge2(df, deltaTable=deltaTable):
-
+    
 	deltaTable.alias("history") \
 	.merge(
 		df.alias("updates"),
@@ -151,18 +152,22 @@ def pit_merge2(df, deltaTable=deltaTable):
 	.whenNotMatchedInsertAll() \
 	.execute()
     
-	deltaTable.toDF().show()
+	deltaTable.toDF().sort('key').show()
 
 
 def print_version(x=3, delta_path=delta_path):
 	for i in range(0,x):
-		spark.read.format("delta").option("versionAsOf", i).load(delta_path).show()
+		print(f"Showing Version: {i}")
+		spark.read.format("delta").option("versionAsOf", i).load(delta_path).sort('key').show()
 
 
 pit_merge(df1)
 pit_merge(df2)
-print_version()
+print('Merge V1')
+print_version(3,'data/delta-table')
 
-deltaTable = create_delta()
-pit_merge2(df1)
-pit_merge2(df2)
+deltaTable2 = create_delta('data/delta-table2')
+pit_merge2(df1, deltaTable2)
+pit_merge2(df2, deltaTable2)
+print('Merge V2')
+print_version(3, 'data/delta-table2')
