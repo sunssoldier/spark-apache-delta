@@ -16,7 +16,7 @@ temp1 = temp0\
 	.sample(int(num_samples/2))\
 	.assign(total_amount = lambda x: (x.total_amount)*1.1)
 
-# define delta+new records table
+# define delta+new_records+removed_records table
 temp2 = pd.concat([
 	temp1.sample(int(num_samples/4))\
 		.assign(total_amount = lambda x: (x.total_amount)*1.1),
