@@ -1,4 +1,4 @@
-conda deactivate #deactivate any active conda environments
+# conda deactivate #deactivate any active conda environments
 #deactivate # deactivate any python venvs
 
 export SPARK_HOME=/usr/local/spark-3.0.0-bin-hadoop2.7/
