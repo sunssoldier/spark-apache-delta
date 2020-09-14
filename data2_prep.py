@@ -18,10 +18,10 @@ odf = odf.reset_index().rename(columns={'index':'key'})
 data0 = odf.query('key<=4')
 
 # first incremental delta
-data1 = odf.query('4>key<=6')
+data1 = odf.query('4<key<=6')
 
 # second incremental delta
-data2 = odf.query('5>key<=8') \
+data2 = odf.query('5<key<=8') \
 	.assign(total_amount = lambda x: (x.total_amount)*1.1)
 
 # second cumulative file

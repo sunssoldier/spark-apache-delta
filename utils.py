@@ -12,44 +12,26 @@ spark = SparkSession \
 	.getOrCreate()
 
 
-delta_path = "data/delta-table"
 
+# delta_path = "data/delta-table"
 
-df0 = spark.read.csv('data/data0.csv', header=True, inferSchema=True) \
-	.withColumn("current",lit("true")) \
-	.withColumn("effectiveDate",lit(0)) \
-	.withColumn("endDate",lit("null"))	
-
-df1 = spark.read.csv('data/data1.csv', header=True, inferSchema=True) \
-	.withColumn("current",lit("true")) \
-	.withColumn("effectiveDate",lit(1)) \
-	.withColumn("endDate",lit("null"))	
-
-df2 = spark.read.csv('data/data2.csv', header=True, inferSchema=True) \
-	.withColumn("current",lit("true")) \
-	.withColumn("effectiveDate",lit(2)) \
-	.withColumn("endDate",lit("null"))	
-
-
-def create_delta(delta_path = delta_path, df=df0):
+def create_delta(delta_path, df):
 	try:
 		shutil.rmtree(delta_path)
 	except:
 		print('Delta path does not exist yet, not deleting.')
     
-	df0.write.format("delta")\
+	df.write.format("delta")\
 		.mode("overwrite")\
 		.save(delta_path)
     
-	deltaTable = DeltaTable.forPath(spark, "data/delta-table")
+	deltaTable = DeltaTable.forPath(spark, delta_path)
 	deltaTable.toDF().sort('key').show()
     
 	return deltaTable
 
 
-deltaTable = create_delta()
-
-def pit_merge(df, deltaTable=deltaTable):
+def pit_merge(df, deltaTable):
 	deltaTable.alias("history") \
 	.merge(
 		df.alias("updates"),
@@ -68,11 +50,9 @@ def pit_merge(df, deltaTable=deltaTable):
 			"effectiveDate": "updates.effectiveDate",  # Set current to true along with the new address and its effective date.
 			"endDate": "null"}
 	).execute()
-    
-	deltaTable.toDF().sort('key').show()
 
 
-def pit_merge2(df, deltaTable=deltaTable):
+def pit_merge2(df, deltaTable):
     
 	deltaTable.alias("history") \
 	.merge(
@@ -85,22 +65,11 @@ def pit_merge2(df, deltaTable=deltaTable):
 	deltaTable.toDF().sort('key').show()
 
 
-def print_version(x=3, delta_path=delta_path):
+def print_version(x, delta_path):
 	for i in range(0,x):
 		print(f"Showing Version: {i}")
 		spark.read.format("delta").option("versionAsOf", i).load(delta_path).sort('key').show()
 
-
-pit_merge(df1)
-pit_merge(df2)
-print('Merge V1')
-print_version(3,'data/delta-table')
-
-deltaTable2 = create_delta('data/delta-table2')
-pit_merge2(df1, deltaTable2)
-pit_merge2(df2, deltaTable2)
-print('Merge V2')
-print_version(3, 'data/delta-table2')
 
 
 
